@@ -1,0 +1,188 @@
+{
+  "id": "xzg-indextts25-basic-0001",
+  "revision": 0,
+  "last_node_id": 4,
+  "last_link_id": 3,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "XZG_IndexTTS25_ModelLoader",
+      "pos": [
+        -600,
+        40
+      ],
+      "size": [
+        340,
+        280
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "XZG_INDEXTTS25_MODEL",
+          "links": [1]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "XZG_IndexTTS25_ModelLoader"
+      },
+      "widgets_values": [
+        "[未找到] 请将模型放入 models/TTS/IndexTTS-2.5",
+        "auto",
+        "auto",
+        false,
+        false,
+        false,
+        false,
+        ""
+      ]
+    },
+    {
+      "id": 2,
+      "type": "LoadAudio",
+      "pos": [
+        -600,
+        340
+      ],
+      "size": [
+        320,
+        120
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [2]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "example.wav",
+        null,
+        null
+      ]
+    },
+    {
+      "id": 3,
+      "type": "XZG_IndexTTS25_Generate",
+      "pos": [
+        -160,
+        40
+      ],
+      "size": [
+        380,
+        380
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "XZG_INDEXTTS25_MODEL",
+          "link": 1
+        },
+        {
+          "name": "speaker_audio",
+          "type": "AUDIO",
+          "link": 2
+        },
+        {
+          "name": "emotion",
+          "type": "XZG_INDEXTTS25_EMOTION",
+          "link": null
+        },
+        {
+          "name": "sampling",
+          "type": "XZG_INDEXTTS25_SAMPLING",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [3]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "XZG_IndexTTS25_Generate"
+      },
+      "widgets_values": [
+        "欢迎使用 IndexTTS 2.5。",
+        "ZH",
+        1.0,
+        0,
+        "fixed"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "PreviewAudio",
+      "pos": [
+        280,
+        80
+      ],
+      "size": [
+        300,
+        80
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 3
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "PreviewAudio"
+      },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      3,
+      0,
+      "XZG_INDEXTTS25_MODEL"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      1,
+      "AUDIO"
+    ],
+    [
+      3,
+      3,
+      0,
+      4,
+      0,
+      "AUDIO"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "frontendVersion": "1.27.4"
+  },
+  "version": 0.4
+}

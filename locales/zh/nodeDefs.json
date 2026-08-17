@@ -1,0 +1,122 @@
+{
+  "XZG_IndexTTS25_ModelLoader": {
+    "display_name": "IndexTTS 2.5 模型加载器",
+    "description": "发现并校验 ComfyUI/models/TTS 下的 IndexTTS 2.5 模型；权重在首次生成时按需载入。",
+    "inputs": {
+      "model_name": {
+        "name": "IndexTTS 2.5 模型",
+        "tooltip": "标准位置：ComfyUI/models/TTS/IndexTTS-2.5。安装模型后需刷新/重启 ComfyUI。"
+      },
+      "device": {
+        "name": "推理设备"
+      },
+      "precision": {
+        "name": "精度",
+        "tooltip": "auto 会在支持的 GPU 上使用 bfloat16，否则使用 float32。"
+      },
+      "use_qwen_emo": {
+        "name": "启用文本情感分析",
+        "tooltip": "加载 Qwen 情感模型（增加显存占用），以启用情感控制节点的「文本描述」模式。不使用时可保持关闭。"
+      },
+      "use_cuda_kernel": {
+        "name": "BigVGAN CUDA 融合核",
+        "tooltip": "首次使用可能编译扩展；不确定时保持关闭。"
+      },
+      "release_after_run": {
+        "name": "生成后释放本模型",
+        "tooltip": "适合显存紧张环境；会降低连续生成速度。"
+      },
+      "verify_hashes": {
+        "name": "完整 SHA-256 校验",
+        "tooltip": "首次校验约需读取 5GB 文件；平时仅做文件大小校验即可。"
+      },
+      "custom_model_path": {
+        "name": "自定义模型绝对路径",
+        "tooltip": "留空时使用上方模型列表；仅用于已有的完整 IndexTTS 2.5 目录。"
+      }
+    },
+    "outputs": {
+      "0": { "name": "IndexTTS 2.5 模型" }
+    }
+  },
+  "XZG_IndexTTS25_EmotionControl": {
+    "display_name": "IndexTTS 2.5 情感控制",
+    "description": "以四种方式控制情感：八维向量、情感参考音频、文本描述、或跟随音色。原项目内置 8 种情感维度（高兴/愤怒/悲伤/恐惧/厌恶/低落/惊讶/自然）。",
+    "inputs": {
+      "mode": {
+        "name": "情感模式",
+        "tooltip": "text 会按需加载额外的 Qwen 情感模型。"
+      },
+      "happy": { "name": "高兴" },
+      "angry": { "name": "愤怒" },
+      "sad": { "name": "悲伤" },
+      "afraid": { "name": "恐惧" },
+      "disgusted": { "name": "反感/厌恶" },
+      "melancholic": { "name": "低落" },
+      "surprised": { "name": "惊讶" },
+      "calm": { "name": "自然" },
+      "strength": { "name": "情感强度" },
+      "use_random": {
+        "name": "随机情感原型",
+        "tooltip": "开启后由 seed 决定每种情感采用的原型；关闭时匹配音色参考。"
+      },
+      "emotion_audio": { "name": "情感参考音频" },
+      "emotion_text": {
+        "name": "情感描述",
+        "placeholder": "例如：高兴——语速轻快、带笑意；悲伤——语速缓慢、声音微颤；低沉压抑，略带忧郁；惊讶又兴奋地大喊。留空则分析待合成文本。"
+      }
+    },
+    "outputs": {
+      "0": { "name": "情感控制" }
+    }
+  },
+  "XZG_IndexTTS25_SamplingConfig": {
+    "display_name": "IndexTTS 2.5 采样设置",
+    "description": "集中配置确定性、采样、长文本分段、停顿和文本归一化参数。",
+    "inputs": {
+      "do_sample": {
+        "name": "启用随机采样",
+        "tooltip": "关闭时结果更稳定；开启后 temperature/top_p/top_k 生效。"
+      },
+      "temperature": { "name": "temperature" },
+      "top_p": { "name": "top_p" },
+      "top_k": { "name": "top_k" },
+      "num_beams": { "name": "num_beams" },
+      "repetition_penalty": { "name": "repetition_penalty" },
+      "length_penalty": { "name": "length_penalty" },
+      "max_mel_tokens": { "name": "最大语音 token" },
+      "max_text_tokens_per_segment": { "name": "每段最大文本 token" },
+      "segment_silence_ms": { "name": "段间静音（毫秒）" },
+      "text_normalization": { "name": "文本归一化" }
+    },
+    "outputs": {
+      "0": { "name": "采样设置" },
+      "1": { "name": "采样信息" }
+    }
+  },
+  "XZG_IndexTTS25_Generate": {
+    "display_name": "IndexTTS 2.5 语音生成",
+    "description": "使用 IndexTTS 2.5 模型进行多语种零样本音色克隆，并输出标准 ComfyUI AUDIO。",
+    "inputs": {
+      "model": { "name": "IndexTTS 2.5 模型" },
+      "speaker_audio": { "name": "音色参考音频" },
+      "text": { "name": "待合成文本" },
+      "language": { "name": "语言" },
+      "duration_factor": {
+        "name": "时长系数（越小越快）"
+      },
+      "seed": { "name": "seed" },
+      "emotion": {
+        "name": "情感控制",
+        "tooltip": "不连接时跟随音色参考。"
+      },
+      "sampling": {
+        "name": "采样设置",
+        "tooltip": "不连接时使用稳定默认值。"
+      }
+    },
+    "outputs": {
+      "0": { "name": "生成音频" }
+    }
+  }
+}

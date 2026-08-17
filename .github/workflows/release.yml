@@ -1,0 +1,84 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release & Notify Comfy Registry
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Verify version matches node_list.json
+        run: |
+          EXPECTED="${{ steps.version.outputs.version }}"
+          ACTUAL=$(python3 -c "import json; print(json.load(open('node_list.json'))['version'])")
+          echo "Tag version:  $EXPECTED"
+          echo "node_list version: $ACTUAL"
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::Version mismatch! Tag v$EXPECTED != node_list.json $ACTUAL"
+            exit 1
+          fi
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cat > RELEASE_NOTES.md <<EOF
+          ## Comfyui-indextts25-xzg v$VERSION
+
+          ### What's Changed
+          - Initial release of the ComfyUI IndexTTS 2.5 custom nodes plugin
+          - Zero-shot voice cloning with IndexTTS 2.5
+          - 4 nodes: Model Loader, Emotion Control, Sampling Config, Speech Generation
+          - Emotion control via 8D vector / reference audio / text / speaker follow
+          - Multilingual support: ZH / EN / JA / ES / AR
+
+          ### Install
+          1. Clone into ComfyUI/custom_nodes/
+          2. Install dependencies: `pip install -r requirements.txt`
+          3. Download models: run `scripts/download_models.py`
+          4. Restart ComfyUI
+
+          ### Nodes
+          - **IndexTTS 2.5 Model Loader** – Load/validate the official model
+          - **IndexTTS 2.5 Emotion Control** – 4 emotion modes
+          - **IndexTTS 2.5 Sampling Config** – Sampling & segmentation parameters
+          - **IndexTTS 2.5 Speech Generation** – Run TTS inference
+
+          Full documentation: [README.md](https://github.com/${{ github.repository }}/blob/main/README_COMFYUI.md)
+          EOF
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release v${{ steps.version.outputs.version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: false
+          prerelease: false
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify Comfy Registry (dispatch workflow)
+        run: |
+          echo "Release v${{ steps.version.outputs.version }} published successfully."
+          echo "Comfy Registry will automatically pick up the new tag within a few minutes."
+          echo "Repository: ${{ github.repository }}"
+          echo "Tag: v${{ steps.version.outputs.version }}"

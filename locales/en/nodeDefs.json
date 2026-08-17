@@ -1,0 +1,122 @@
+{
+  "XZG_IndexTTS25_ModelLoader": {
+    "display_name": "IndexTTS 2.5 Model Loader",
+    "description": "Discover and validate the IndexTTS 2.5 model under ComfyUI/models/TTS; weights are loaded on demand at first generation.",
+    "inputs": {
+      "model_name": {
+        "name": "IndexTTS 2.5 Model",
+        "tooltip": "Standard location: ComfyUI/models/TTS/IndexTTS-2.5. Refresh/restart ComfyUI after installing a model."
+      },
+      "device": {
+        "name": "Device"
+      },
+      "precision": {
+        "name": "Precision",
+        "tooltip": "auto uses bfloat16 on supported GPUs, otherwise float32."
+      },
+      "use_qwen_emo": {
+        "name": "Enable Text Emotion Analysis",
+        "tooltip": "Loads the Qwen emotion model (extra VRAM) to enable the emotion control node's text description mode. Keep off if you don't use it."
+      },
+      "use_cuda_kernel": {
+        "name": "BigVGAN CUDA Fused Kernel",
+        "tooltip": "May compile an extension on first use; keep off if unsure."
+      },
+      "release_after_run": {
+        "name": "Release Model After Run",
+        "tooltip": "Suitable for low-VRAM environments; lowers speed for consecutive generations."
+      },
+      "verify_hashes": {
+        "name": "Full SHA-256 Verification",
+        "tooltip": "First verification reads ~5GB of files; otherwise only file sizes are checked."
+      },
+      "custom_model_path": {
+        "name": "Custom Model Absolute Path",
+        "tooltip": "Leave empty to use the list above; only for existing complete IndexTTS 2.5 directories."
+      }
+    },
+    "outputs": {
+      "0": { "name": "IndexTTS 2.5 Model" }
+    }
+  },
+  "XZG_IndexTTS25_EmotionControl": {
+    "display_name": "IndexTTS 2.5 Emotion Control",
+    "description": "Control emotion in four ways: 8-dimensional vector, emotion reference audio, text description, or follow the voice. The official model ships with 8 emotion dimensions (Happy/Angry/Sad/Afraid/Disgusted/Melancholic/Surprised/Calm).",
+    "inputs": {
+      "mode": {
+        "name": "Emotion Mode",
+        "tooltip": "text loads an additional Qwen emotion model on demand."
+      },
+      "happy": { "name": "Happy" },
+      "angry": { "name": "Angry" },
+      "sad": { "name": "Sad" },
+      "afraid": { "name": "Afraid" },
+      "disgusted": { "name": "Disgusted" },
+      "melancholic": { "name": "Melancholic" },
+      "surprised": { "name": "Surprised" },
+      "calm": { "name": "Calm" },
+      "strength": { "name": "Emotion Strength" },
+      "use_random": {
+        "name": "Random Emotion Prototype",
+        "tooltip": "When on, the seed determines the prototype for each emotion; when off, matches the voice reference."
+      },
+      "emotion_audio": { "name": "Emotion Reference Audio" },
+      "emotion_text": {
+        "name": "Emotion Description",
+        "placeholder": "e.g. happy: brisk pace with a light laugh; sad: slow pace with a trembling voice; low and suppressed, slightly melancholic; shouting with surprise and excitement. Leave blank to analyze the text to synthesize."
+      }
+    },
+    "outputs": {
+      "0": { "name": "Emotion Control" }
+    }
+  },
+  "XZG_IndexTTS25_SamplingConfig": {
+    "display_name": "IndexTTS 2.5 Sampling Config",
+    "description": "Centrally configure determinism, sampling, long-text segmentation, pauses and text normalization parameters.",
+    "inputs": {
+      "do_sample": {
+        "name": "Enable Random Sampling",
+        "tooltip": "Results are more stable when off; temperature/top_p/top_k take effect when on."
+      },
+      "temperature": { "name": "temperature" },
+      "top_p": { "name": "top_p" },
+      "top_k": { "name": "top_k" },
+      "num_beams": { "name": "num_beams" },
+      "repetition_penalty": { "name": "repetition_penalty" },
+      "length_penalty": { "name": "length_penalty" },
+      "max_mel_tokens": { "name": "Max Mel Tokens" },
+      "max_text_tokens_per_segment": { "name": "Max Text Tokens per Segment" },
+      "segment_silence_ms": { "name": "Segment Silence (ms)" },
+      "text_normalization": { "name": "Text Normalization" }
+    },
+    "outputs": {
+      "0": { "name": "Sampling Config" },
+      "1": { "name": "Sampling Info" }
+    }
+  },
+  "XZG_IndexTTS25_Generate": {
+    "display_name": "IndexTTS 2.5 Speech Generation",
+    "description": "Multilingual zero-shot voice cloning with the IndexTTS 2.5 model, outputting standard ComfyUI AUDIO.",
+    "inputs": {
+      "model": { "name": "IndexTTS 2.5 Model" },
+      "speaker_audio": { "name": "Speaker Reference Audio" },
+      "text": { "name": "Text to Synthesize" },
+      "language": { "name": "Language" },
+      "duration_factor": {
+        "name": "Duration Factor (smaller = faster)"
+      },
+      "seed": { "name": "seed" },
+      "emotion": {
+        "name": "Emotion Control",
+        "tooltip": "Follows the voice reference when not connected."
+      },
+      "sampling": {
+        "name": "Sampling Config",
+        "tooltip": "Uses stable defaults when not connected."
+      }
+    },
+    "outputs": {
+      "0": { "name": "Generated Audio" }
+    }
+  }
+}

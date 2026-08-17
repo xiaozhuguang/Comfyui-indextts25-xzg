@@ -1,0 +1,38 @@
+# Additional dependencies for the ComfyUI IndexTTS 2.5 plugin.
+#
+# IMPORTANT: torch / torchaudio are NOT listed here on purpose. Use the ones
+# bundled with ComfyUI. Do NOT downgrade or reinstall torch.
+#
+# Install with your ComfyUI Python, e.g.:
+#   python -m pip install -r requirements.txt
+
+# Text front-end / normalization
+wetext>=0.0.9
+cn2an==0.5.22
+jieba==0.42.1
+g2p-en==2.1.0
+json5==0.10.0
+textstat>=0.7.10
+
+# Tokenizers / G2P / Japanese
+tiktoken>=0.7.0
+fugashi>=1.2.0
+unidic-lite>=1.0.0
+
+# Model loaders (only one of these is actually used at runtime)
+transformers>=4.40.0
+sentencepiece>=0.2.1
+modelscope>=1.20.0
+
+# Speech / audio
+librosa>=0.10.0
+descript-audiotools==0.7.2
+
+# Misc
+omegaconf>=2.3.0
+einops>=0.8.1
+munch>=4.0.0
+accelerate>=0.30.0
+safetensors>=0.4.0
+requests>=2.28
+tqdm>=4.67.1
