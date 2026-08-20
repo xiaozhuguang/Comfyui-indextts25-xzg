@@ -74,6 +74,19 @@ python -m pip install -r custom_nodes/Comfyui-indextts25-xzg/requirements.txt
 </details>
 
 <details>
+<summary><b>生成音频忽大忽小 / 想让输出响度和参考一致？</b></summary>
+
+v2.0.0 起已内置音频归一化（gated-RMS）。在「IndexTTS 2.5 语音生成」节点点开 advanced，找到 **Output Normalization**：
+
+- **match reference（默认）**：输出缩放至与你喂入的参考音频相同响度，输入多大 → 输出多大；
+- **rms -16 dB**：统一到播客/流媒体标准，多段拼接响度一致；
+- **peak -1 dB**：仅峰值归一化；
+- **off**：原始模型输出。
+
+参考音频在进模型前会先标准化到 -20 dBFS（保证音色克隆稳定），同时记录原始响度用于 `match reference` 模式回算。
+</details>
+
+<details>
 <summary><b>报 ImportError: cannot import name 'OffloadedCache'</b></summary>
 
 环境中 transformers 被其他插件升级到 5.x 导致。v1.0.1 已内置兼容层并锁定 `transformers<5.0`。若仍出现，请执行：
@@ -89,7 +102,8 @@ python -m pip install "transformers>=4.40.0,<5.0" "huggingface-hub>=0.34.0,<1.0"
 
 | 版本 | 日期 | 变更 |
 | :--- | :--- | :--- |
-| **v1.0.1** | 2026-08-20 | 修复 transformers 5.x 兼容性；补齐 BigVGAN env 模块；收紧依赖版本约束 |
+| **v2.0.0** | 2026-08-20 | 内置 gated-RMS 音频归一化；参考音频标准化到 -20 dBFS；输出默认「对齐参考响度」，另附播客/峰值/关闭模式 |
+| v1.0.1 | 2026-08-20 | 修复 transformers 5.x 兼容性；补齐 BigVGAN env 模块；收紧依赖版本约束 |
 | v1.0.0 | 2026-08-18 | 首次发布 |
 
 完整变更记录见 [CHANGELOG.md](./CHANGELOG.md)。

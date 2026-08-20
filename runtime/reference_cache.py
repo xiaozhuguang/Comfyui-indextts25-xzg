@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 import os
 import threading
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any
 import torch
 
 from .audio_adapter import INDEXTTS_SAMPLE_RATE, validate_comfy_audio
+from .audio_normalizer import REFERENCE_TARGET_DB, measure, normalize_reference
 
 
 MAX_REFERENCE_SECONDS = 15.0
@@ -38,7 +40,10 @@ def _cache_root() -> Path:
     return path
 
 
-def comfy_audio_to_reference_wav(audio: dict[str, Any], *, kind: str) -> tuple[Path, tuple[str, ...]]:
+def comfy_audio_to_reference_wav(audio: dict[str, Any], *, kind: str) -> tuple[Path, tuple[str, ...], float]:
+    """Cache the reference WAV; the third return value is the gated RMS (dBFS)
+    measured on the original audio before normalization, used by the output
+    "match reference" mode to keep generation as loud as the input."""
     waveform = validate_comfy_audio(audio, name=kind)
     sample_rate = int(audio["sample_rate"])
     mono = waveform.mean(dim=1)
@@ -60,14 +65,19 @@ def comfy_audio_to_reference_wav(audio: dict[str, Any], *, kind: str) -> tuple[P
             raise RuntimeError("缺少 torchaudio，无法转换参考音频采样率。") from exc
         mono = torchaudio.functional.resample(mono, sample_rate, INDEXTTS_SAMPLE_RATE)
 
+    _, source_rms_db = measure(mono, INDEXTTS_SAMPLE_RATE)
+    mono, ref_gain = normalize_reference(mono, INDEXTTS_SAMPLE_RATE)
+    if abs(ref_gain - 1.0) > 1e-3:
+        notes.append(f"{kind} 已响度归一化到 {REFERENCE_TARGET_DB:g} dBFS（增益 {20 * math.log10(max(ref_gain, 1e-10)):+.1f} dB）。")
     mono = mono.clamp(-1.0, 1.0).contiguous()
     digest = hashlib.sha256()
+    digest.update(b"refnorm-rms20-dc")
     digest.update(str(INDEXTTS_SAMPLE_RATE).encode("ascii"))
     digest.update(mono.numpy().tobytes())
     key = digest.hexdigest()
     target = _cache_root() / f"{kind}-{key}.wav"
     if target.is_file():
-        return target, tuple(notes)
+        return target, tuple(notes), source_rms_db
 
     with _lock_for(key):
         if not target.is_file():
@@ -83,4 +93,4 @@ def comfy_audio_to_reference_wav(audio: dict[str, Any], *, kind: str) -> tuple[P
             finally:
                 if temporary.exists():
                     temporary.unlink(missing_ok=True)
-    return target, tuple(notes)
+    return target, tuple(notes), source_rms_db

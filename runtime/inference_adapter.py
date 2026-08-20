@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .audio_adapter import indextts_result_to_audio
+from .audio_normalizer import OUTPUT_NORMALIZATION_MODES, apply_output_normalization
 from .model_cache import MODEL_CACHE
 from .reference_cache import comfy_audio_to_reference_wav
 from .seed_scope import scoped_seed
@@ -42,6 +43,7 @@ def run_inference(
     seed: int,
     emotion: EmotionConfig | None = None,
     sampling: SamplingConfig | None = None,
+    output_normalization: str = OUTPUT_NORMALIZATION_MODES[0],
 ) -> tuple[dict[str, Any], str]:
     text = str(text).strip()
     if not text:
@@ -50,10 +52,12 @@ def run_inference(
         raise ValueError(f"不支持的语言：{language}")
     if not 0.5 <= float(duration_factor) <= 2.0:
         raise ValueError("语速/时长系数必须在 0.5 到 2.0 之间。")
+    if output_normalization not in OUTPUT_NORMALIZATION_MODES:
+        raise ValueError(f"未知输出归一化模式：{output_normalization}")
 
     emotion = emotion or DEFAULT_EMOTION
     sampling = sampling or DEFAULT_SAMPLING
-    speaker_path, speaker_notes = comfy_audio_to_reference_wav(speaker_audio, kind="speaker")
+    speaker_path, speaker_notes, speaker_rms_db = comfy_audio_to_reference_wav(speaker_audio, kind="speaker")
     notes = list(speaker_notes) + list(emotion.notes)
 
     emo_audio_prompt = None
@@ -63,7 +67,7 @@ def run_inference(
     if emotion.mode == "reference_audio":
         if emotion.reference_audio is None:
             raise ValueError("情感参考音频模式缺少 emotion_audio。")
-        emotion_path, emotion_notes = comfy_audio_to_reference_wav(emotion.reference_audio, kind="emotion")
+        emotion_path, emotion_notes, _ = comfy_audio_to_reference_wav(emotion.reference_audio, kind="emotion")
         emo_audio_prompt = str(emotion_path)
         notes.extend(emotion_notes)
     elif emotion.mode == "vector":
@@ -114,6 +118,11 @@ def run_inference(
     if result is None:
         raise RuntimeError("IndexTTS 2.5 未生成音频。请缩短文本或提高 max_mel_tokens 后重试。")
     audio = indextts_result_to_audio(result)
+    audio, output_note = apply_output_normalization(
+        audio, output_normalization, reference_rms_db=speaker_rms_db
+    )
+    if output_note:
+        notes.append(output_note)
     duration = audio["waveform"].shape[-1] / audio["sample_rate"]
     status = (
         f"IndexTTS 2.5 | {language.upper()} | {duration:.2f}s | "

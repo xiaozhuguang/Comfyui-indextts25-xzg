@@ -2,6 +2,35 @@
 
 本插件遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本的详细变更记录如下。
 
+## [2.0.0] - 2026-08-20
+
+### 新增
+
+- **音频归一化（gated-RMS）**：新建 `runtime/audio_normalizer.py`，实现带静音门限的 gated-RMS 响度测量
+  （借鉴 ITU-R BS.1770 gating 思想，50ms 分帧 + -60 dBFS 静音阈值，首尾静音不拉低测量值），
+  以及去直流偏置、峰值天花板、非对称增益限幅（放大限幅、衰减放宽）等全套处理。
+
+### 变更
+
+- **参考音频响度标准化**（输入侧，[`reference_cache.py`](./runtime/reference_cache.py)）：
+  说话人 / 情感参考音频在重采样后统一经去 DC → gated-RMS 归到 **-20 dBFS** → 峰值限 **-3 dBFS**；
+  实测增益会出现在状态栏（例如「speaker 已响度归一化到 -20 dBFS（增益 +9.1 dB）」）；
+  缓存 hash 纳入归一化标签，版本变化不会命中旧缓存。
+- **生成音频响度控制**（输出侧，[`audio_normalizer.py`](./runtime/audio_normalizer.py) / [`inference_adapter.py`](./runtime/inference_adapter.py)）：
+  「XZG_IndexTTS25_Speech_Generate」节点新增 advanced 参数 **Output Normalization**：
+  - `match reference`（默认）：输出按参考音频原始响度缩放，**输入多大输出就多大**，
+    同时用 -1 dBFS 峰值天花板兜底，避免对齐到很响的参考时削波；
+  - `rms -16 dB`：按播客标准（-16 dBFS RMS / -1 dBFS peak）统一响度，多段拼接响度一致；
+  - `peak -1 dB`：峰值归一化；
+  - `off`：模型原始输出（仅 clamp）。
+- **`node_list.json` 版本号**升至 `2.0.0`，Generate 节点 `inputs` 追加 `output_normalization`。
+
+### 说明
+
+- 实现全程使用 PyTorch 原生算子，无第三方依赖（如 `pyloudnorm`），离线环境不受影响。
+- 参考音频的原始响度在归一化前测量并一路传出，`match reference` 用它缩放结果；
+  而**进模型**的参考仍是归一化到 -20 dBFS 的稳定版本，保证音色克隆和情感抽取稳定。
+
 ## [1.0.1] - 2026-08-20
 
 ### 修复

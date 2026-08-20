@@ -13,6 +13,7 @@ from comfy_api.latest import io
 from typing_extensions import override
 
 from .runtime.inference_adapter import run_inference
+from .runtime.audio_normalizer import OUTPUT_NORMALIZATION_MODES
 from .runtime.types import EmotionConfig, ModelHandle, SamplingConfig
 from .services.model_store import (
     MISSING_MODEL_OPTION,
@@ -473,6 +474,19 @@ class IndexTTS25Generate(io.ComfyNode):
                     optional=True,
                     tooltip="Uses stable defaults when not connected.",
                 ),
+                io.Combo.Input(
+                    "output_normalization",
+                    display_name="Output Normalization",
+                    options=list(OUTPUT_NORMALIZATION_MODES),
+                    default=OUTPUT_NORMALIZATION_MODES[0],
+                    advanced=True,
+                    tooltip=(
+                        "match reference: the output is scaled to the same gated-RMS level as "
+                        "the speaker reference audio you fed in (loud in = loud out). "
+                        "rms -16 dB: fixed broadcast level with -1 dB peak ceiling. "
+                        "peak -1 dB: peak normalization only. off: raw model output."
+                    ),
+                ),
             ],
             outputs=[
                 io.Audio.Output("audio", display_name="Generated Audio"),
@@ -498,6 +512,7 @@ class IndexTTS25Generate(io.ComfyNode):
         seed: int,
         emotion: EmotionConfig | None = None,
         sampling: SamplingConfig | None = None,
+        output_normalization: str = OUTPUT_NORMALIZATION_MODES[0],
     ) -> io.NodeOutput:
         audio, _ = run_inference(
             handle=model,
@@ -508,5 +523,6 @@ class IndexTTS25Generate(io.ComfyNode):
             seed=seed,
             emotion=emotion,
             sampling=sampling,
+            output_normalization=output_normalization,
         )
         return io.NodeOutput(audio)
