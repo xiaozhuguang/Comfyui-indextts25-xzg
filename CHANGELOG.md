@@ -2,6 +2,29 @@
 
 本插件遵循 [语义化版本](https://semver.org/lang/zh-CN/)。每个版本的详细变更记录如下。
 
+## [2.0.1] - 2026-08-21
+
+### 优化
+
+- **响度测量升级为 BS.1770 双阶段门控**（[`audio_normalizer.py`](./runtime/audio_normalizer.py)）：
+  原单阶段 `-60 dBFS` 静音门限改为「绝对门 `-70 dBFS` + 相对门 `-10 dB` 低于活跃帧均值」，
+  呼吸声、房间底噪、淡出尾音不会再拉低测量值，`match reference` 对齐精度显著提升。
+- **输出端新增 soft-knee 软峰值限制器**（`_soft_limit` + `normalize_rms_limited`）：
+  峰值超出天花板时，`match reference` / `rms -16 dB` 模式不再直接裁剪，
+  而是用 2dB soft-knee + tanh 渐进压缩吸收温和过冲，实际输出响度更贴近目标。
+  若软压缩导致响度损失超过 1.5 dB（目标不可及），会自动回退到保守峰值增益，音质优先。
+- **状态栏提示细化**：当实际 RMS 低于目标 1 dB 以上时，会追加说明
+  「低于目标 X dB，已受峰值保护限制」，便于判断是否需要降低参考响度或换用 `peak -1 dB`。
+
+### 修复
+
+- **参考缓存版本标签升级**（[`reference_cache.py`](./runtime/reference_cache.py)）：
+  hash salt 从 `refnorm-rms20-dc` → `refnorm-v2-gate`，
+  门控算法升级后旧缓存自动失效，避免历史缓存影响归一化结果。
+- **GPT 模型显式继承 GenerationMixin**（`indextts/gpt/model.py` / `model_v2.py` / `model_v2_5.py`）：
+  与本地私有 `transformers_generation_utils.GenerationMixin` 绑定，
+  进一步加固 transformers 4.x / 5.x 混合环境下的 MRO 解析。
+
 ## [2.0.0] - 2026-08-20
 
 ### 新增

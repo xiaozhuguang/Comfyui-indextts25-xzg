@@ -1,6 +1,6 @@
 [project]
 name = "indextts"
-version = "1.0.0"
+version = "2.0.1"
 description = "IndexTTS2: A Breakthrough in Emotionally Expressive and Duration-Controlled Auto-Regressive Zero-Shot Text-to-Speech"
 authors = [{ name = "Bilibili IndexTTS Team" }]
 license = "LicenseRef-Bilibili-IndexTTS"

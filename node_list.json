@@ -1,6 +1,6 @@
 {
   "name": "Comfyui-indextts25-xzg",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "author": "xiaozhuguang",
   "description": "ComfyUI custom nodes for IndexTTS 2.5 - Zero-shot voice cloning with emotion control, multilingual support (ZH/EN/JA/ES/AR), and sampling configuration.",
   "project_page": "https://github.com/xiaozhuguang/Comfyui-indextts25-xzg",

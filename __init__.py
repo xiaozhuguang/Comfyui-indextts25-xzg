@@ -18,7 +18,7 @@ from .nodes import (
 from .services.model_store import register_model_paths
 
 LOGGER = logging.getLogger("ComfyUI-IndexTTS2.5")
-__version__ = "1.0.0"
+__version__ = "2.0.1"
 
 
 class IndexTTS25Extension(ComfyExtension):

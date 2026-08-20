@@ -71,7 +71,7 @@ def comfy_audio_to_reference_wav(audio: dict[str, Any], *, kind: str) -> tuple[P
         notes.append(f"{kind} 已响度归一化到 {REFERENCE_TARGET_DB:g} dBFS（增益 {20 * math.log10(max(ref_gain, 1e-10)):+.1f} dB）。")
     mono = mono.clamp(-1.0, 1.0).contiguous()
     digest = hashlib.sha256()
-    digest.update(b"refnorm-rms20-dc")
+    digest.update(b"refnorm-v2-gate")
     digest.update(str(INDEXTTS_SAMPLE_RATE).encode("ascii"))
     digest.update(mono.numpy().tobytes())
     key = digest.hexdigest()
