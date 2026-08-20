@@ -29,9 +29,15 @@ from transformers.cache_utils import (
     Cache,
     DynamicCache,
     EncoderDecoderCache,
-    OffloadedCache,
     StaticCache,
 )
+
+# OffloadedCache removed in transformers 5.x; fall back to DynamicCache
+# since IndexTTS never explicitly requests offloaded cache implementation.
+try:
+    from transformers.cache_utils import OffloadedCache
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    OffloadedCache = DynamicCache
 
 # Newer transformers versions moved/renamed QuantizedCacheConfig; keep the import
 # optional so the module loads across transformers 4.52.x .. 4.57.x.
@@ -43,8 +49,53 @@ from transformers.configuration_utils import PretrainedConfig
 from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
 from transformers.integrations.fsdp import is_fsdp_managed_module
 from transformers.modeling_outputs import CausalLMOutputWithPast, Seq2SeqLMOutput
-from transformers.pytorch_utils import isin_mps_friendly
-from transformers.tokenization_utils import ExtensionsTrie
+
+# isin_mps_friendly removed in transformers 5.x; use torch.isin directly
+# (Windows environment never uses MPS backend anyway).
+try:
+    from transformers.pytorch_utils import isin_mps_friendly
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    def isin_mps_friendly(elements, test_elements, *, assume_unique=False, invert=False):
+        return torch.isin(
+            elements, test_elements, assume_unique=assume_unique, invert=invert
+        )
+
+# ExtensionsTrie removed in transformers 5.x; provide a minimal prefix-trie
+# implementation used only for token healing (not on the hot path of IndexTTS).
+try:
+    from transformers.tokenization_utils import ExtensionsTrie
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    class ExtensionsTrie:
+        """
+        Very small prefix-trie that mimics transformers' ExtensionsTrie API:
+        constructed from tokenizer.get_vocab() (dict[str, int]), and exposes
+        `extensions(prefix=...)` returning tokens that start with `prefix`.
+        """
+
+        def __init__(self, vocab):
+            # Build a sorted list of (token_str, token_id) pairs for prefix scan.
+            self._tokens = sorted(
+                (tok for tok in vocab.keys() if isinstance(tok, str)),
+                key=lambda s: (len(s), s),
+            )
+
+        def extensions(self, prefix=""):
+            if not prefix:
+                return list(self._tokens)
+            # Binary-search the lower bound of prefix then linear scan.
+            import bisect
+            idx = bisect.bisect_left(self._tokens, prefix)
+            result = []
+            n = len(prefix)
+            while idx < len(self._tokens):
+                tok = self._tokens[idx]
+                if tok[:n] != prefix:
+                    break
+                if tok != prefix:
+                    result.append(tok)
+                idx += 1
+            return result
+
 from transformers.utils import (
     ModelOutput,
     is_accelerate_available,

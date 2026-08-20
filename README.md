@@ -65,4 +65,35 @@ python -m pip install -r custom_nodes/Comfyui-indextts25-xzg/requirements.txt
 
 ---
 
+## ⚠️ 常见问题
+
+<details>
+<summary><b>hf_cache 目录是什么？能删吗？</b></summary>
+
+`ComfyUI/models/TTS/IndexTTS-2.5/hf_cache/` 存放 4 个第三方辅助模型（w2v-bert-2.0 / campplus / bigvgan / MaskGCT codec，约 2.8GB），由 Meta / NVIDIA / 阿里 / Amphion 提供，不在 IndexTTS 官方模型包内，但推理管线必需。**不能删除**，否则离线环境下节点会报 `LocalEntryNotFoundError` 并重新下载。
+</details>
+
+<details>
+<summary><b>报 ImportError: cannot import name 'OffloadedCache'</b></summary>
+
+环境中 transformers 被其他插件升级到 5.x 导致。v1.0.1 已内置兼容层并锁定 `transformers<5.0`。若仍出现，请执行：
+
+```bash
+python -m pip install "transformers>=4.40.0,<5.0" "huggingface-hub>=0.34.0,<1.0"
+```
+</details>
+
+---
+
+## 📋 更新日志
+
+| 版本 | 日期 | 变更 |
+| :--- | :--- | :--- |
+| **v1.0.1** | 2026-08-20 | 修复 transformers 5.x 兼容性；补齐 BigVGAN env 模块；收紧依赖版本约束 |
+| v1.0.0 | 2026-08-18 | 首次发布 |
+
+完整变更记录见 [CHANGELOG.md](./CHANGELOG.md)。
+
+---
+
 > 本插件是对 [index-tts/index-tts](https://github.com/index-tts/index-tts) 官方项目的 ComfyUI 适配封装，完整文档与许可证请参考源仓库。

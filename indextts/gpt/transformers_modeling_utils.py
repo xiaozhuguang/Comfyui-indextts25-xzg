@@ -53,13 +53,103 @@ from transformers.loss.loss_utils import LOSS_MAPPING
 from transformers.pytorch_utils import (  # noqa: F401
     Conv1D,
     apply_chunking_to_forward,
-    find_pruneable_heads_and_indices,
     id_tensor_storage,
     is_torch_greater_or_equal_than_1_13,
-    prune_conv1d_layer,
-    prune_layer,
     prune_linear_layer,
 )
+
+# Pruning helpers removed in transformers 5.x; provide minimal local stubs
+# so the module loads (IndexTTS does not rely on model pruning at runtime).
+try:
+    from transformers.pytorch_utils import find_pruneable_heads_and_indices
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    def find_pruneable_heads_and_indices(heads, n_heads, head_dim, already_pruned_heads):
+        """
+        Local reimplementation of the removed transformers helper.
+        Takes a set of heads to prune, validates, and returns the updated
+        head set and the flat index of rows/cols to remove from weight matrices.
+        """
+        heads = set(heads) - already_pruned_heads
+        if not heads:
+            return heads, torch.tensor([], dtype=torch.long)
+        index = torch.tensor(list(heads), dtype=torch.long)
+        index = index.view(-1, 1) * head_dim + torch.arange(head_dim).view(1, -1)
+        index = index.flatten().sort().values
+        return heads, index
+
+try:
+    from transformers.pytorch_utils import prune_conv1d_layer
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    def prune_conv1d_layer(layer, index, dim=1):
+        index = index.to(layer.weight.device)
+        W = layer.weight.index_select(dim, index).clone().detach()
+        if layer.bias is not None:
+            if dim == 1:
+                b = layer.bias.clone().detach()
+            else:
+                b = layer.bias[index].clone().detach()
+        else:
+            b = None
+        new_size = list(layer.weight.size())
+        new_size[dim] = len(index)
+        new_layer = Conv1D(new_size[1], new_size[0])
+        new_layer.weight.requires_grad = False
+        new_layer.weight.copy_(W.contiguous())
+        new_layer.weight.requires_grad = True
+        if b is not None:
+            new_layer.bias.requires_grad = False
+            new_layer.bias.copy_(b.contiguous())
+            new_layer.bias.requires_grad = True
+        return new_layer
+
+try:
+    from transformers.pytorch_utils import prune_layer
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    def prune_layer(layer, index, dim=None):
+        if dim is None:
+            raise ValueError("dim must be specified for prune_layer")
+        index = index.to(layer.weight.device)
+        W = layer.weight.index_select(dim, index).clone().detach()
+        if getattr(layer, "bias", None) is not None:
+            if dim == 0:
+                b = layer.bias[index].clone().detach()
+            else:
+                b = layer.bias.clone().detach()
+        else:
+            b = None
+        new_size = list(layer.weight.size())
+        new_size[dim] = len(index)
+        if isinstance(layer, nn.Conv2d):
+            new_layer = nn.Conv2d(
+                in_channels=new_size[1] if dim == 0 else layer.in_channels,
+                out_channels=new_size[0] if dim == 0 else layer.out_channels,
+                kernel_size=layer.kernel_size,
+                stride=layer.stride,
+                padding=layer.padding,
+                dilation=layer.dilation,
+                groups=layer.groups,
+                bias=b is not None,
+                padding_mode=layer.padding_mode,
+                device=layer.weight.device,
+                dtype=layer.weight.dtype,
+            )
+        else:
+            # Default to nn.Linear-style layer
+            new_layer = nn.Linear(
+                in_features=new_size[1],
+                out_features=new_size[0],
+                bias=b is not None,
+                device=layer.weight.device,
+                dtype=layer.weight.dtype,
+            )
+        new_layer.weight.requires_grad = False
+        new_layer.weight.copy_(W.contiguous())
+        new_layer.weight.requires_grad = True
+        if b is not None:
+            new_layer.bias.requires_grad = False
+            new_layer.bias.copy_(b.contiguous())
+            new_layer.bias.requires_grad = True
+        return new_layer
 from transformers.quantizers import AutoHfQuantizer, HfQuantizer
 from transformers.quantizers.quantizers_utils import get_module_from_name
 from transformers.safetensors_conversion import auto_conversion

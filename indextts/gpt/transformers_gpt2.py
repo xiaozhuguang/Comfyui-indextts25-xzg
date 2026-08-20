@@ -67,7 +67,46 @@ from transformers.modeling_outputs import (
 )
 # from transformers.modeling_utils import PreTrainedModel, SequenceSummary
 
-from transformers.pytorch_utils import Conv1D, find_pruneable_heads_and_indices, prune_conv1d_layer
+from transformers.pytorch_utils import Conv1D
+
+# Pruning helpers removed in transformers 5.x; re-use the compatible stubs
+# defined in transformers_modeling_utils (or fall back to local ones here).
+try:
+    from transformers.pytorch_utils import find_pruneable_heads_and_indices
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    def find_pruneable_heads_and_indices(heads, n_heads, head_dim, already_pruned_heads):
+        heads = set(heads) - already_pruned_heads
+        if not heads:
+            return heads, torch.tensor([], dtype=torch.long)
+        index = torch.tensor(list(heads), dtype=torch.long)
+        index = index.view(-1, 1) * head_dim + torch.arange(head_dim).view(1, -1)
+        index = index.flatten().sort().values
+        return heads, index
+
+try:
+    from transformers.pytorch_utils import prune_conv1d_layer
+except ImportError:  # pragma: no cover (transformers >= 5.x)
+    def prune_conv1d_layer(layer, index, dim=1):
+        index = index.to(layer.weight.device)
+        W = layer.weight.index_select(dim, index).clone().detach()
+        if layer.bias is not None:
+            if dim == 1:
+                b = layer.bias.clone().detach()
+            else:
+                b = layer.bias[index].clone().detach()
+        else:
+            b = None
+        new_size = list(layer.weight.size())
+        new_size[dim] = len(index)
+        new_layer = Conv1D(new_size[1], new_size[0])
+        new_layer.weight.requires_grad = False
+        new_layer.weight.copy_(W.contiguous())
+        new_layer.weight.requires_grad = True
+        if b is not None:
+            new_layer.bias.requires_grad = False
+            new_layer.bias.copy_(b.contiguous())
+            new_layer.bias.requires_grad = True
+        return new_layer
 from transformers.utils import (
     ModelOutput,
     add_code_sample_docstrings,

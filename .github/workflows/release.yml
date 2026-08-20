@@ -35,34 +35,26 @@ jobs:
             exit 1
           fi
 
-      - name: Generate release notes
+      - name: Generate release notes from CHANGELOG.md
         id: notes
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          cat > RELEASE_NOTES.md <<EOF
-          ## Comfyui-indextts25-xzg v$VERSION
-
-          ### What's Changed
-          - Initial release of the ComfyUI IndexTTS 2.5 custom nodes plugin
-          - Zero-shot voice cloning with IndexTTS 2.5
-          - 4 nodes: Model Loader, Emotion Control, Sampling Config, Speech Generation
-          - Emotion control via 8D vector / reference audio / text / speaker follow
-          - Multilingual support: ZH / EN / JA / ES / AR
-
-          ### Install
-          1. Clone into ComfyUI/custom_nodes/
-          2. Install dependencies: `pip install -r requirements.txt`
-          3. Download models: run `scripts/download_models.py`
-          4. Restart ComfyUI
-
-          ### Nodes
-          - **IndexTTS 2.5 Model Loader** – Load/validate the official model
-          - **IndexTTS 2.5 Emotion Control** – 4 emotion modes
-          - **IndexTTS 2.5 Sampling Config** – Sampling & segmentation parameters
-          - **IndexTTS 2.5 Speech Generation** – Run TTS inference
-
-          Full documentation: [README.md](https://github.com/${{ github.repository }}/blob/main/README_COMFYUI.md)
-          EOF
+          # Extract the "## [VERSION] - date" section up to the next "## [" heading
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\[" ver "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > BODY.md
+          if [ ! -s BODY.md ]; then
+            echo "::error::CHANGELOG.md has no section for version $VERSION"
+            exit 1
+          fi
+          {
+            echo "# Comfyui-indextts25-xzg v$VERSION"
+            echo ""
+            cat BODY.md
+          } > RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

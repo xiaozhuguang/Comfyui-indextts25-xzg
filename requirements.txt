@@ -19,8 +19,18 @@ tiktoken>=0.7.0
 fugashi>=1.2.0
 unidic-lite>=1.0.0
 
+# Whisper tokenizer (used by indextts.utils.tokenizer)
+openai-whisper>=20231117
+
 # Model loaders (only one of these is actually used at runtime)
-transformers>=4.40.0
+# NOTE: IndexTTS ships private copies of transformers.generation.* / modeling_*
+# internals that are compatible with transformers 4.x only (4.40 .. 4.57 tested).
+# transformers 5.x removed OffloadedCache, isin_mps_friendly, beam_search,
+# beam_constraints, ExtensionsTrie, pruning helpers etc. and will break loading.
+# Also keep huggingface-hub < 1.0 per transformers 4.x constraints.
+transformers>=4.40.0,<5.0
+huggingface-hub>=0.34.0,<1.0
+tokenizers>=0.22.0,<=0.23.0
 sentencepiece>=0.2.1
 modelscope>=1.20.0
 
