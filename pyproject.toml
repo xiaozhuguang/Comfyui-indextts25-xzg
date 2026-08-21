@@ -94,6 +94,13 @@ test = [
 ]
 
 [tool.pytest.ini_options]
+# Only collect tests/ — collecting the repo root would make pytest treat the
+# root dir (which has a ComfyUI custom-node __init__.py) as a package and
+# import it, failing outside a ComfyUI environment (no comfy_api).
+testpaths = ["tests"]
+# Stop the collector-chain walk at tests/ so the repo root is never wrapped
+# in a Package collector (same reason as testpaths above).
+addopts = "--confcutdir=tests"
 markers = [
     "gpu: tests that require GPU and model checkpoints (deselect with '-m not gpu')",
 ]
