@@ -1,0 +1,16 @@
+# Development-only assets, excluded from the Comfy Registry archive.
+# (Syntax mirrors .gitignore; files not tracked by git are already excluded.)
+assets/
+archive/
+backends/
+cli_tests/
+tests/
+docs/
+examples/
+tools/
+webui.py
+Dockerfile*
+docker-compose*
+uv.lock
+.python-version
+MANIFEST.in

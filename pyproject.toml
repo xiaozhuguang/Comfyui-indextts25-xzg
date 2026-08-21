@@ -1,5 +1,6 @@
 [project]
-name = "indextts"
+# Registry node id (immutable after creation on registry.comfy.org).
+name = "Comfyui-indextts25-xzg"
 version = "2.0.1"
 description = "IndexTTS2: A Breakthrough in Emotionally Expressive and Duration-Controlled Auto-Regressive Zero-Shot Text-to-Speech"
 authors = [{ name = "Bilibili IndexTTS Team" }]
@@ -106,8 +107,13 @@ markers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/index-tts/index-tts"
-Repository = "https://github.com/index-tts/index-tts.git"
+Homepage = "https://github.com/xiaozhuguang/Comfyui-indextts25-xzg"
+Repository = "https://github.com/xiaozhuguang/Comfyui-indextts25-xzg.git"
+
+[tool.comfy]
+PublisherId = "xiaozhuguang"
+DisplayName = "ComfyUI IndexTTS 2.5 (XZG) - 语音克隆与情感控制"
+Icon = "https://raw.githubusercontent.com/xiaozhuguang/Comfyui-indextts25-xzg/main/assets/indextts_icon.png"
 
 [project.scripts]
 # Set the installed binary names and entry points.

@@ -4,13 +4,15 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Create GitHub Release & Notify Comfy Registry
+    name: Create GitHub Release
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -68,9 +70,28 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Notify Comfy Registry (dispatch workflow)
+  publish-node:
+    name: Publish Custom Node to Comfy Registry
+    needs: release
+    if: always() && (needs.release.result == 'success' || needs.release.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Verify version consistency (pyproject == node_list.json)
         run: |
-          echo "Release v${{ steps.version.outputs.version }} published successfully."
-          echo "Comfy Registry will automatically pick up the new tag within a few minutes."
-          echo "Repository: ${{ github.repository }}"
-          echo "Tag: v${{ steps.version.outputs.version }}"
+          PYV=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          NLV=$(python3 -c "import json; print(json.load(open('node_list.json'))['version'])")
+          echo "pyproject.toml version: $PYV"
+          echo "node_list.json version:  $NLV"
+          if [ "$PYV" != "$NLV" ]; then
+            echo "::error::Version mismatch! pyproject.toml $PYV != node_list.json $NLV"
+            exit 1
+          fi
+
+      - name: Publish Custom Node
+        uses: Comfy-Org/publish-node-action@main
+        with:
+          personal_access_token: ${{ secrets.REGISTRY_ACCESS_TOKEN }}
+          skip_checkout: true
